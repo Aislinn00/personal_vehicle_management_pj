@@ -1,0 +1,14 @@
+# Frontend
+frontend/node_modules/
+
+# Python backend
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+
+# Builds (if any later)
+dist/
+build/
+
+# Env files (if you add them later)
+.env
