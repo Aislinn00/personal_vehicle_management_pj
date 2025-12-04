@@ -14,7 +14,13 @@ def test_db():
     conn.close()
     return jsonify({"database": db[0]})
 
+@app.route("/check-secret")
+def check_secret():
+    from utils.jwt_utils import SECRET_KEY
+    return {"length": len(SECRET_KEY)}
+
+
 if __name__ == "__main__":
     app.run(debug=True)
-    
+
 app.register_blueprint(vehicle_routes)
