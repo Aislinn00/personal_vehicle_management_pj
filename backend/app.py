@@ -1,10 +1,14 @@
+# app.py
 from flask import Flask, jsonify
+from flask_cors import CORS
 from db import get_connection
-from routes.vehicle_routes import vehicle_routes
+from routes.auth_routes import auth_routes
+
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route('/test-db')
+@app.route("/test-db")
 def test_db():
     conn = get_connection()
     cursor = conn.cursor()
@@ -14,13 +18,7 @@ def test_db():
     conn.close()
     return jsonify({"database": db[0]})
 
-@app.route("/check-secret")
-def check_secret():
-    from utils.jwt_utils import SECRET_KEY
-    return {"length": len(SECRET_KEY)}
-
+app.register_blueprint(auth_routes)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-app.register_blueprint(vehicle_routes)
