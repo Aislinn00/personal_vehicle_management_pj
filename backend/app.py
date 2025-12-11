@@ -1,9 +1,8 @@
-# app.py
 from flask import Flask, jsonify
 from flask_cors import CORS
 from db import get_connection
 from routes.auth_routes import auth_routes
-
+from routes.vehicle_routes import vehicle_routes
 
 app = Flask(__name__)
 CORS(app)
@@ -19,6 +18,7 @@ def test_db():
     return jsonify({"database": db[0]})
 
 app.register_blueprint(auth_routes)
+app.register_blueprint(vehicle_routes)
 
 if __name__ == "__main__":
     app.run(debug=True)
