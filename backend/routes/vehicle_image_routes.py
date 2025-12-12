@@ -62,12 +62,12 @@ def list_vehicle_images(vehicle_id):
 
 
 # GET one image
-@vehicle_image_routes.route("/images/<int:image_id>", methods=["GET"])
+@vehicle_image_routes.route("/images/<int:photo_id>", methods=["GET"])
 @auth_required
-def get_vehicle_image(image_id):
+def get_vehicle_image(photo_id):
     conn = get_connection()
     cur = conn.cursor(dictionary=True)
-    cur.callproc("get_vehicle_image_by_id", [image_id])
+    cur.callproc("get_vehicle_image_by_id", [photo_id])
 
     image = None
     for r in cur.stored_results():
@@ -86,16 +86,16 @@ def get_vehicle_image(image_id):
 
 
 # UPDATE
-@vehicle_image_routes.route("/images/<int:image_id>", methods=["PUT"])
+@vehicle_image_routes.route("/images/<int:photo_id>", methods=["PUT"])
 @auth_required
-def update_vehicle_image(image_id):
+def update_vehicle_image(photo_id):
     data = request.get_json() or {}
     if not data.get("image_path"):
         return jsonify({"error": "image_path required"}), 400
 
     conn = get_connection()
     cur = conn.cursor()
-    cur.callproc("update_vehicle_image", [image_id, data["image_path"]])
+    cur.callproc("update_vehicle_image", [photo_id, data["image_path"]])
     conn.commit()
     cur.close()
     conn.close()
@@ -104,12 +104,12 @@ def update_vehicle_image(image_id):
 
 
 # DELETE (soft)
-@vehicle_image_routes.route("/images/<int:image_id>", methods=["DELETE"])
+@vehicle_image_routes.route("/images/<int:photo_id>", methods=["DELETE"])
 @auth_required
-def delete_vehicle_image(image_id):
+def delete_vehicle_image(photo_id):
     conn = get_connection()
     cur = conn.cursor()
-    cur.callproc("delete_vehicle_image", [image_id])
+    cur.callproc("delete_vehicle_image", [photo_id])
     conn.commit()
     cur.close()
     conn.close()
