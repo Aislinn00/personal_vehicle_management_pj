@@ -4,6 +4,7 @@ from db import get_connection
 from routes.auth_routes import auth_routes
 from routes.vehicle_routes import vehicle_routes
 from routes.maintenance_routes import maintenance_routes
+from routes.reminder_routes import reminder_routes
 
 app = Flask(__name__)
 CORS(app)
@@ -21,7 +22,7 @@ def test_db():
 app.register_blueprint(auth_routes)
 app.register_blueprint(vehicle_routes)
 app.register_blueprint(maintenance_routes)
-
+app.register_blueprint(reminder_routes)
 
 if __name__ == "__main__":
     app.run(debug=True)
