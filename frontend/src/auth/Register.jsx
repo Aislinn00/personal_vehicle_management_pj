@@ -1,28 +1,27 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import { useNavigate } from "react-router-dom";
+import { registerUser } from "../api/authApi";
 
-export default function Register() {
-  const navigate = useNavigate();
-
+const Register = () => {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setError("");
 
     try {
-      await api.post("/auth/register", {
+      await registerUser({
+        full_name: fullName,
         email,
         password,
       });
-
-      setMessage("Registration successful. Redirecting to login...");
-      setTimeout(() => navigate("/login"), 1500);
+      navigate("/login");
     } catch (err) {
-      setMessage("Registration failed");
+      setError(err.response?.data?.error || "Registration failed");
     }
   };
 
@@ -30,7 +29,15 @@ export default function Register() {
     <form onSubmit={handleSubmit}>
       <h2>Register</h2>
 
-      {message && <p>{message}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <input
+        type="text"
+        placeholder="Full Name"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+        required
+      />
 
       <input
         type="email"
@@ -49,10 +56,8 @@ export default function Register() {
       />
 
       <button type="submit">Register</button>
-
-      <p>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
     </form>
   );
-}
+};
+
+export default Register;

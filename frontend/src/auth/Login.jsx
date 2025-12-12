@@ -1,30 +1,25 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
 
-export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const res = await api.post("/auth/login", {
-        email,
-        password,
-      });
-
+      const res = await loginUser({ email, password });
       login(res.data.token);
       navigate("/dashboard");
     } catch (err) {
-      setError("Invalid email or password");
+      setError(err.response?.data?.error || "Login failed");
     }
   };
 
@@ -51,10 +46,8 @@ export default function Login() {
       />
 
       <button type="submit">Login</button>
-
-      <p>
-        Don’t have an account? <Link to="/register">Register</Link>
-      </p>
     </form>
   );
-}
+};
+
+export default Login;
