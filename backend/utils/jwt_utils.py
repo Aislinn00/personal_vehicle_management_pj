@@ -8,7 +8,7 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-TOKEN_EXP_HOURS = 24
+TOKEN_EXP_HOURS = 168
 
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY is missing.")
