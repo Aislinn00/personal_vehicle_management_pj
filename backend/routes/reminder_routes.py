@@ -4,7 +4,6 @@ from utils.auth_role import auth_required
 
 reminder_routes = Blueprint("reminder_routes", __name__)
 
-
 def _vehicle_owned(vehicle_id, user_id):
     conn = get_connection()
     cur = conn.cursor(dictionary=True)
@@ -15,7 +14,8 @@ def _vehicle_owned(vehicle_id, user_id):
     v = cur.fetchone()
     cur.close()
     conn.close()
-    return v and v["user_id"] == user_id
+    return bool(v) and v["user_id"] == user_id
+
 
 def _reminder_belongs_to_user(reminder_id, user_id):
     conn = get_connection()
@@ -37,108 +37,146 @@ def _reminder_belongs_to_user(reminder_id, user_id):
     return bool(row) and row["user_id"] == user_id
 
 
-# CREATE
+def _fetchall_from_proc(cur):
+    rows = []
+    for r in cur.stored_results():
+        rows = r.fetchall()
+    return rows
+
+
+def _fetchone_from_proc(cur):
+    row = None
+    for r in cur.stored_results():
+        row = r.fetchone()
+    return row
+
+
+# CREATE (per vehicle)
+
 @reminder_routes.route("/vehicles/<int:vehicle_id>/reminders", methods=["POST"])
 @auth_required
 def create_reminder(vehicle_id):
-    if not _vehicle_owned(vehicle_id, g.current_user["user_id"]):
+    user_id = g.current_user["user_id"]
+
+    if not _vehicle_owned(vehicle_id, user_id):
         return jsonify({"error": "Forbidden"}), 403
 
     d = request.get_json() or {}
     required = ["title", "reminder_type", "priority"]
-    missing = [f for f in required if not d.get(f)]
+    missing = [f for f in required if d.get(f) in (None, "", [])]
+    if missing:
+        return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+
+    if d["reminder_type"] not in ("DATE", "MILEAGE", "BOTH"):
+        return jsonify({"error": "Invalid reminder_type"}), 400
+
+    if d["priority"] not in ("low", "medium", "high"):
+        return jsonify({"error": "Invalid priority"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        res = cur.callproc("create_reminder", [
+            vehicle_id,
+            d["title"],
+            d["reminder_type"],
+            d["priority"],
+            0  # is_active
+        ])
+        conn.commit()
+        return jsonify({"reminder_id": res[-1]}), 201
+    finally:
+        cur.close()
+        conn.close()
+
+
+# READ (per vehicle)
+
+@reminder_routes.route("/vehicles/<int:vehicle_id>/reminders", methods=["GET"])
+@auth_required
+def list_reminders_by_vehicle(vehicle_id):
+    user_id = g.current_user["user_id"]
+
+    if not _vehicle_owned(vehicle_id, user_id):
+        return jsonify({"error": "Forbidden"}), 403
+
+    status = request.args.get("status")  # upcoming | completed | None
+
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+
+    try:
+        cur.callproc("get_reminders_by_vehicle", [
+            vehicle_id,
+            status
+        ])
+        rows = _fetchall_from_proc(cur)
+        return jsonify(rows), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
+# READ ONE
+
+@reminder_routes.route("/reminders/<int:reminder_id>", methods=["GET"])
+@auth_required
+def get_reminder(reminder_id):
+    user_id = g.current_user["user_id"]
+
+    if not _reminder_belongs_to_user(reminder_id, user_id):
+        return jsonify({"error": "Not found"}), 404
+
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+
+    try:
+        cur.callproc("get_reminder_by_id", [reminder_id])
+        reminder = _fetchone_from_proc(cur)
+        if not reminder:
+            return jsonify({"error": "Not found"}), 404
+        return jsonify(reminder), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
+# UPDATE
+
+@reminder_routes.route("/reminders/<int:reminder_id>", methods=["PUT"])
+@auth_required
+def update_reminder(reminder_id):
+    user_id = g.current_user["user_id"]
+
+    if not _reminder_belongs_to_user(reminder_id, user_id):
+        return jsonify({"error": "Not found"}), 404
+
+    d = request.get_json() or {}
+    required = ["title", "reminder_type", "priority"]
+    missing = [f for f in required if d.get(f) in (None, "", [])]
     if missing:
         return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
 
     conn = get_connection()
     cur = conn.cursor()
 
-    args = [
-        vehicle_id,
-        d["title"],
-        d["reminder_type"],
-        d["priority"],
-        0
-    ]
-
-    res = cur.callproc("create_reminder", args)
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"reminder_id": res[-1]}), 201
+    try:
+        cur.callproc("update_reminder", [
+            reminder_id,
+            d["title"],
+            d["reminder_type"],
+            d["priority"]
+        ])
+        conn.commit()
+        return jsonify({"message": "Reminder updated"}), 200
+    finally:
+        cur.close()
+        conn.close()
 
 
-# FILTER (dashboard)
-@reminder_routes.route("/reminders", methods=["GET"])
-@auth_required
-def list_reminders():
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
+# MARK COMPLETED
 
-    cur.callproc("filter_reminders", [
-        g.current_user["user_id"],
-        request.args.get("vehicle_id", type=int),
-        request.args.get("status")
-    ])
-
-    rows = []
-    for r in cur.stored_results():
-        rows = r.fetchall()
-
-    cur.close()
-    conn.close()
-    return jsonify(rows), 200
-
-
-# GET ONE
-@reminder_routes.route("/reminders/<int:reminder_id>", methods=["GET"])
-@auth_required
-def get_reminder(reminder_id):
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.callproc("get_reminder_by_id", [reminder_id])
-
-    reminder = None
-    for r in cur.stored_results():
-        reminder = r.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if not reminder:
-        return jsonify({"error": "Not found"}), 404
-
-    if not _vehicle_owned(reminder["vehicle_id"], g.current_user["user_id"]):
-        return jsonify({"error": "Forbidden"}), 403
-
-    return jsonify(reminder), 200
-
-
-# UPDATE
-@reminder_routes.route("/reminders/<int:reminder_id>", methods=["PUT"])
-@auth_required
-def update_reminder(reminder_id):
-    d = request.get_json() or {}
-
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.callproc("update_reminder", [
-        reminder_id,
-        d["title"],
-        d["reminder_type"],
-        d["priority"]
-    ])
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"message": "Reminder updated"}), 200
-
-
-# COMPLETE
 @reminder_routes.route("/reminders/<int:reminder_id>/complete", methods=["PUT"])
 @auth_required
 def complete_reminder(reminder_id):
@@ -149,21 +187,33 @@ def complete_reminder(reminder_id):
 
     conn = get_connection()
     cur = conn.cursor()
-    cur.callproc("mark_reminder_completed", [reminder_id])
-    conn.commit()
-    cur.close()
-    conn.close()
 
-    return jsonify({"message": "Reminder completed"}), 200
+    try:
+        cur.callproc("mark_reminder_completed", [reminder_id])
+        conn.commit()
+        return jsonify({"message": "Reminder completed"}), 200
+    finally:
+        cur.close()
+        conn.close()
+
 
 # DELETE (SOFT)
+
 @reminder_routes.route("/reminders/<int:reminder_id>", methods=["DELETE"])
 @auth_required
 def delete_reminder(reminder_id):
+    user_id = g.current_user["user_id"]
+
+    if not _reminder_belongs_to_user(reminder_id, user_id):
+        return jsonify({"error": "Not found"}), 404
+
     conn = get_connection()
     cur = conn.cursor()
-    cur.callproc("delete_reminder", [reminder_id])
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({"message": "Reminder deleted"}), 200
+
+    try:
+        cur.callproc("delete_reminder", [reminder_id])
+        conn.commit()
+        return jsonify({"message": "Reminder deleted"}), 200
+    finally:
+        cur.close()
+        conn.close()
