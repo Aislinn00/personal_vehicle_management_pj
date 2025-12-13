@@ -79,7 +79,7 @@ def list_vehicles():
         cursor = conn.cursor(dictionary=True)
 
         # sp_get_vehicles(IN p_user_id)
-        cursor.callproc("get_vehicles", [user_id])
+        cursor.callproc("get_all_vehicles", [user_id])
 
         for result in cursor.stored_results():
             vehicles = result.fetchall()
@@ -180,7 +180,7 @@ def update_vehicle(vehicle_id):
             int(data["mileage"]),
         ]
 
-        cursor.callproc("sp_update_vehicle", args)
+        cursor.callproc("update_vehicle", args)
         conn.commit()
 
     except MySQLError as e:
