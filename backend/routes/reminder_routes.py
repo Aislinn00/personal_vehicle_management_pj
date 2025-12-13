@@ -17,6 +17,25 @@ def _vehicle_owned(vehicle_id, user_id):
     conn.close()
     return v and v["user_id"] == user_id
 
+def _reminder_belongs_to_user(reminder_id, user_id):
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute(
+        """
+        SELECT v.user_id
+        FROM reminders r
+        JOIN vehicles v ON v.vehicle_id = r.vehicle_id
+        WHERE r.reminder_id = %s
+          AND r.is_active = 1
+          AND v.is_active = 1
+        """,
+        (reminder_id,)
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return bool(row) and row["user_id"] == user_id
+
 
 # CREATE
 @reminder_routes.route("/vehicles/<int:vehicle_id>/reminders", methods=["POST"])
@@ -120,17 +139,22 @@ def update_reminder(reminder_id):
 
 
 # COMPLETE
-@reminder_routes.route("/reminders/<int:reminder_id>/complete", methods=["PATCH"])
+@reminder_routes.route("/reminders/<int:reminder_id>/complete", methods=["PUT"])
 @auth_required
 def complete_reminder(reminder_id):
+    user_id = g.current_user["user_id"]
+
+    if not _reminder_belongs_to_user(reminder_id, user_id):
+        return jsonify({"error": "Not found"}), 404
+
     conn = get_connection()
     cur = conn.cursor()
-    cur.callproc("complete_reminder", [reminder_id])
+    cur.callproc("mark_reminder_completed", [reminder_id])
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify({"message": "Reminder completed"}), 200
 
+    return jsonify({"message": "Reminder completed"}), 200
 
 # DELETE (SOFT)
 @reminder_routes.route("/reminders/<int:reminder_id>", methods=["DELETE"])
