@@ -2,7 +2,18 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://personal-vehicle-management-pj.vercel.app/",
+]
+
+CORS(
+    app,
+    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+)
 
 @app.route("/health")
 def health():
