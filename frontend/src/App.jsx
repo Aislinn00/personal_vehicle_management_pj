@@ -8,6 +8,8 @@ import VehicleFormPage from "./vehicles/pages/VehicleFormPage";
 import VehicleDetail from "./vehicles/pages/VehicleDetail";
 import MaintenanceList from "./maintenance/pages/MaintenanceList";
 import MaintenanceFormPage from "./maintenance/pages/MaintenanceFormPage";
+import ReminderFormPage from "./reminders/pages/ReminderFormPage";
+import ReminderList from "./reminders/pages/ReminderList";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -55,16 +57,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/vehicles/:id/maintenance"
-          element={
-            <ProtectedRoute>
-              <MaintenanceList />
-            </ProtectedRoute>
-          }
-        />
-
+        
         <Route
           path="/vehicles/:id/maintenance"
           element={
@@ -79,6 +72,24 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MaintenanceFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vehicles/:id/reminders"
+          element={
+            <ProtectedRoute>
+              <ReminderList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vehicles/:id/reminders/new"
+          element={
+            <ProtectedRoute>
+              <ReminderFormPage />
             </ProtectedRoute>
           }
         />
