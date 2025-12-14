@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import request, jsonify, g
 import jwt
-from utils.jwt_utils import decode_token, SECRET_KEY, ALGORITHM
+from backend.utils.jwt_utils import decode_token, SECRET_KEY, ALGORITHM
 
 
 def auth_required(f):

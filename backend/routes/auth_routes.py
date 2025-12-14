@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify, g
 from mysql.connector import Error as MySQLError
-from db import get_connection
-from utils.hashing import hash_password, check_password
-from utils.jwt_utils import create_token
-from utils.auth_role import auth_required
+from backend.db import get_connection
+from backend.utils.hashing import hash_password, check_password
+from backend.utils.jwt_utils import create_token
+from backend.utils.auth_role import auth_required
 
 auth_routes = Blueprint("auth_routes", __name__)
 

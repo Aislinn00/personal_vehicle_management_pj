@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
-from db import get_connection
-from utils.auth_role import auth_required
-from utils.azure_blob import upload_to_blob
+from backend.db import get_connection
+from backend.utils.auth_role import auth_required
+from backend.utils.azure_blob import upload_to_blob
 
 vehicle_image_routes = Blueprint("vehicle_image_routes", __name__)
 
