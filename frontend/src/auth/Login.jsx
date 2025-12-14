@@ -16,7 +16,7 @@ const Login = () => {
 
     try {
       const res = await loginUser({ email, password });
-      login(res.data.token);
+      login(res.data.token, res.data.user);
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
