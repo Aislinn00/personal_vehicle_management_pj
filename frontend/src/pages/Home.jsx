@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div className="bg-gray-50 px-4 pt-10">
+    <div className="bg-gray-50 px-4 pt-20 min-h-[calc(100vh-64px)]">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-10 text-center space-y-4">
         {/* Title */}
         <h1 className="text-4xl font-bold text-gray-900">
