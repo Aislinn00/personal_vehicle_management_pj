@@ -1,16 +1,86 @@
-# React + Vite
+# 🚗 Personal Vehicle Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack web application for managing personal vehicles, including maintenance records, reminders, and vehicle images.  
+The system is built with a React + Tailwind frontend, a Flask REST API backend, MySQL for data persistence, and Azure Blob Storage for image handling.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📌 Features
 
-## React Compiler
+### 🔐 Authentication & Authorization
+- JWT-based authentication
+- User-specific data access with strict ownership enforcement
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🚘 Vehicle Management
+- Create, view, update, and delete vehicles
+- Vehicles are scoped to authenticated users only
 
-## Expanding the ESLint configuration
+### 🛠 Maintenance Records
+- Add, update, view, and delete maintenance logs
+- Fields include service date, maintenance type, cost, and status
+- Server-side validation and access control
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### ⏰ Reminders
+- Create reminders per vehicle
+- Support for date-based and mileage-based reminders
+- Mark reminders as completed
+- Filter reminders by status (upcoming / completed)
+
+### 🖼 Vehicle Images
+- Upload vehicle images
+- Images stored in Azure Blob Storage
+- Image URLs persisted in MySQL
+- Soft delete with ownership validation
+- Responsive image gallery with improved UX
+
+---
+
+## 🧱 Tech Stack
+
+### Frontend
+- React (Vite)
+- Tailwind CSS
+- Axios
+- React Router
+
+### Backend
+- Python (Flask)
+- Flask-CORS
+- JWT Authentication
+- MySQL
+
+### Storage & Deployment
+- Azure Blob Storage (vehicle images)
+- Backend deployed on Render
+- Frontend deployed on Vercel
+
+---
+
+## 🗂 Project Structure
+
+```text
+├── backend/
+│   ├── routes/             # Flask route blueprints (vehicles, maintenance, reminders, images)
+│   ├── utils/              # Utility modules (auth, Azure Blob integration)
+│   ├── app.py              # Flask application entry point
+│   └── db.py               # Database connection handling
+│
+├── frontend/
+│   ├── public/             # Static assets
+│   ├── src/
+│   │   ├── api/            # Axios API clients
+│   │   ├── assets/         # Images and static resources
+│   │   ├── auth/           # Authentication-related pages
+│   │   ├── components/     # Reusable UI components
+│   │   ├── context/        # Global state (auth, user context)
+│   │   ├── layouts/        # Layout wrappers
+│   │   ├── maintenance/    # Maintenance feature pages
+│   │   ├── reminders/      # Reminder feature pages
+│   │   ├── routes/         # Application routing configuration
+│   │   ├── vehicleImages/  # Vehicle image upload & gallery
+│   │   ├── vehicles/       # Vehicle management pages
+│   │   ├── App.jsx         # Root application component
+│   │   ├── config.js       # App configuration
+│   │   ├── index.css       # Global styles (Tailwind)
+│   │   └── main.jsx        # Application entry point
+│   └── eslint.config.js    # ESLint configuration
