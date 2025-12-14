@@ -49,58 +49,104 @@ export default function ReminderList() {
   };
 
   return (
-    <div>
-      <h2>Reminders</h2>
+    <div className="px-4 pt-10 space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-sm text-gray-600 hover:text-black hover:underline"
+          >
+            ← Back to Vehicle
+          </button>
 
-      <button onClick={() => navigate(-1)}>Back to Vehicle</button>
-      <button
-        onClick={() => navigate(`/vehicles/${vehicleId}/reminders/new`)}
-        style={{ marginLeft: "0.5rem" }}
-      >
-        Create Reminder
-      </button>
+          <h2 className="text-2xl font-semibold text-gray-900 mt-2">
+            Reminders
+          </h2>
+          <p className="text-sm text-gray-600">
+            Manage upcoming and completed reminders.
+          </p>
+        </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        <button
+          onClick={() => navigate(`/vehicles/${vehicleId}/reminders/new`)}
+          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-900 transition"
+        >
+          Create Reminder
+        </button>
+      </div>
 
-      <div style={{ marginTop: "1rem" }}>
-        <label>Status:</label>
+      {/* Error */}
+      {error && (
+        <div className="rounded border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Filter */}
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium text-gray-700">
+          Status
+        </label>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ marginLeft: "0.5rem" }}
+          className="rounded border border-gray-300 px-3 py-1.5 bg-white
+                     focus:outline-none focus:ring-2 focus:ring-black"
         >
           <option value="upcoming">Upcoming</option>
           <option value="completed">Completed</option>
         </select>
       </div>
 
+      {/* Content */}
       {loading ? (
-        <p>Loading reminders...</p>
+        <p className="text-gray-600">Loading reminders…</p>
       ) : reminders.length === 0 ? (
-        <p>No reminders found.</p>
+        <div className="bg-white border rounded-lg p-8 text-center">
+          <p className="text-gray-600 mb-4">No reminders found.</p>
+          <button
+            onClick={() => navigate(`/vehicles/${vehicleId}/reminders/new`)}
+            className="bg-black text-white px-6 py-2 rounded hover:bg-gray-900 transition"
+          >
+            Create your first reminder
+          </button>
+        </div>
       ) : (
-        <ul style={{ marginTop: "1rem" }}>
+        <div className="space-y-4">
           {reminders.map((r) => (
-            <li key={r.reminder_id} style={{ marginBottom: "1rem" }}>
-              <strong>{r.title}</strong>
-              <br />
-              Type: {r.reminder_type}
-              <br />
-              Priority: {r.priority}
-              <br />
-              Status: {r.status}
-              {r.completed_at && (
-                <div>
-                  Completed at:{" "}
-                  {new Date(r.completed_at).toLocaleString()}
-                </div>
-              )}
+            <div
+              key={r.reminder_id}
+              className="bg-white border rounded-lg p-5 flex justify-between items-start gap-4"
+            >
+              {/* Left */}
+              <div>
+                <h4 className="font-semibold text-gray-900">
+                  {r.title}
+                </h4>
 
-              <div style={{ marginTop: "0.5rem" }}>
+                <div className="mt-1 text-sm text-gray-600 space-y-0.5">
+                  <div>Type: {r.reminder_type}</div>
+                  <div>Priority: {r.priority}</div>
+                  <div>Status: {r.status}</div>
+
+                  {r.completed_at && (
+                    <div>
+                      Completed at:{" "}
+                      {new Date(r.completed_at).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
                 {r.status === "upcoming" && (
                   <button
                     onClick={() => handleComplete(r.reminder_id)}
                     disabled={busyId === r.reminder_id}
+                    className="border px-3 py-1.5 rounded hover:bg-gray-50
+                               disabled:opacity-50"
                   >
                     Mark Completed
                   </button>
@@ -109,14 +155,15 @@ export default function ReminderList() {
                 <button
                   onClick={() => handleDelete(r.reminder_id)}
                   disabled={busyId === r.reminder_id}
-                  style={{ marginLeft: "0.5rem" }}
+                  className="border border-red-300 text-red-600 px-3 py-1.5 rounded
+                             hover:bg-red-50 disabled:opacity-50"
                 >
                   Delete
                 </button>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
