@@ -10,7 +10,7 @@ def health():
 
 @app.route("/test-db")
 def test_db():
-    from backend.db import get_connection
+    from db import get_connection
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DATABASE();")
