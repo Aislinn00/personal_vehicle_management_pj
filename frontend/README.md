@@ -84,3 +84,17 @@ The system is built with a React + Tailwind frontend, a Flask REST API backend, 
 │   │   ├── index.css       # Global styles (Tailwind)
 │   │   └── main.jsx        # Application entry point
 │   └── eslint.config.js    # ESLint configuration
+
+---
+
+## 🤖 AI Assistance Disclosure
+
+This project was developed by the author.  
+AI-based tools (including OpenAI’s ChatGPT) were used **as a supplementary aid** for:
+
+- Debugging and error explanation
+- Code refactoring suggestions
+- Understanding framework behavior and deployment issues
+
+All architectural decisions, implementation, testing, and final code were reviewed, adapted, and validated by the author.
+
