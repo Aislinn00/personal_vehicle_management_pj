@@ -4,7 +4,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://personal-vehicle-management-pj.vercel.app/",
+    "https://personal-vehicle-management-pj.vercel.app",
 ]
 
 CORS(
