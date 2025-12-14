@@ -92,7 +92,7 @@ def list_vehicle_images(vehicle_id):
 @vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images", methods=["POST"])
 @auth_required
 def upload_vehicle_image(vehicle_id):
-    from backend.utils.azure_blob import upload_to_blob  # lazy import (IMPORTANT)
+    from utils.azure_blob import upload_to_blob  # lazy import (IMPORTANT)
 
     user_id = g.current_user["user_id"]
 
