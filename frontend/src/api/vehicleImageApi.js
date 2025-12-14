@@ -1,4 +1,4 @@
-import api from "../api/axios";
+import api from "./axios";
 
 // GET images for a vehicle
 export const getVehicleImages = (vehicleId) =>
