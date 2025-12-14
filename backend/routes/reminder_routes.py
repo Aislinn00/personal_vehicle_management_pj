@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, g
-from backend.db import get_connection
-from backend.utils.auth_role import auth_required
+from db import get_connection
+from utils.auth_role import auth_required
 
 reminder_routes = Blueprint("reminder_routes", __name__)
 

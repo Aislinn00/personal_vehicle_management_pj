@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from mysql.connector import Error as MySQLError
-from backend.db import get_connection
-from backend.utils.auth_role import auth_required
+from db import get_connection
+from utils.auth_role import auth_required
 
 vehicle_image_routes = Blueprint("vehicle_image_routes", __name__)
 
