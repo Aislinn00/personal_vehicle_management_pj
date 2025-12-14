@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify, g
 from mysql.connector import Error as MySQLError
-from backend.db import get_connection
-from backend.utils.hashing import hash_password, check_password
-from backend.utils.jwt_utils import create_token
-from backend.utils.auth_role import auth_required
+from db import get_connection
+from utils.hashing import hash_password, check_password
+from utils.jwt_utils import create_token
+from utils.auth_role import auth_required
 
 auth_routes = Blueprint("auth_routes", __name__)
 
@@ -118,23 +118,29 @@ def logout():
 @auth_routes.route("/me", methods=["GET"])
 @auth_required
 def me():
-
-    #returns the current authenticated user's basic info.
-    from db import get_connection
     user_id = g.current_user["user_id"]
 
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT user_id, full_name, email, role, is_active, created_at, updated_at "
-        "FROM users WHERE user_id = %s",
-        (user_id,)
-    )
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT user_id, full_name, email, role, is_active, created_at, updated_at "
+            "FROM users WHERE user_id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+    except MySQLError as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
     if not user or user["is_active"] != 1:
         return jsonify({"error": "User not found or inactive"}), 404
 
     return jsonify({"user": user}), 200
+

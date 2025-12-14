@@ -1,43 +1,57 @@
 from flask import Blueprint, request, jsonify, g
+from mysql.connector import Error as MySQLError
 from backend.db import get_connection
 from backend.utils.auth_role import auth_required
-from backend.utils.azure_blob import upload_to_blob
 
 vehicle_image_routes = Blueprint("vehicle_image_routes", __name__)
 
+
 def _vehicle_owned(vehicle_id, user_id):
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute(
-        "SELECT user_id FROM vehicles WHERE vehicle_id = %s AND is_active = 1",
-        (vehicle_id,)
-    )
-    v = cur.fetchone()
-    cur.close()
-    conn.close()
-    return bool(v) and v["user_id"] == user_id
+    conn = None
+    cur = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            "SELECT user_id FROM vehicles WHERE vehicle_id = %s AND is_active = 1",
+            (vehicle_id,)
+        )
+        v = cur.fetchone()
+        return bool(v) and v["user_id"] == user_id
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 
 def _image_owned(photo_id, user_id):
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute(
-        """
-        SELECT v.user_id
-        FROM vehicle_images vi
-        JOIN vehicles v ON v.vehicle_id = vi.vehicle_id
-        WHERE vi.photo_id = %s
-          AND vi.is_active = 1
-          AND v.is_active = 1
-        """,
-        (photo_id,)
-    )
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    return bool(row) and row["user_id"] == user_id
+    conn = None
+    cur = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            """
+            SELECT v.user_id
+            FROM vehicle_images vi
+            JOIN vehicles v ON v.vehicle_id = vi.vehicle_id
+            WHERE vi.photo_id = %s
+              AND vi.is_active = 1
+              AND v.is_active = 1
+            """,
+            (photo_id,)
+        )
+        row = cur.fetchone()
+        return bool(row) and row["user_id"] == user_id
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 
-# GET images
+# ----------------- GET images -----------------
 
 @vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images", methods=["GET"])
 @auth_required
@@ -47,31 +61,39 @@ def list_vehicle_images(vehicle_id):
     if not _vehicle_owned(vehicle_id, user_id):
         return jsonify({"error": "Forbidden"}), 403
 
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
+    conn = None
+    cur = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            """
+            SELECT photo_id, image_path
+            FROM vehicle_images
+            WHERE vehicle_id = %s
+              AND is_active = 1
+            ORDER BY photo_id DESC
+            """,
+            (vehicle_id,)
+        )
+        images = cur.fetchall()
+        return jsonify(images), 200
+    except MySQLError as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
-    cur.execute(
-        """
-        SELECT photo_id, image_path
-        FROM vehicle_images
-        WHERE vehicle_id = %s
-          AND is_active = 1
-        ORDER BY photo_id DESC
-        """,
-        (vehicle_id,)
-    )
-    images = cur.fetchall()
 
-    cur.close()
-    conn.close()
-    return jsonify(images), 200
-
-
-# UPLOAD image
+# ----------------- UPLOAD image -----------------
 
 @vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images", methods=["POST"])
 @auth_required
 def upload_vehicle_image(vehicle_id):
+    from backend.utils.azure_blob import upload_to_blob  # lazy import (IMPORTANT)
+
     user_id = g.current_user["user_id"]
 
     if not _vehicle_owned(vehicle_id, user_id):
@@ -85,22 +107,26 @@ def upload_vehicle_image(vehicle_id):
     if not file or file.filename == "":
         return jsonify({"error": "Empty filename"}), 400
 
-    # Validate content type
     allowed_types = {"image/jpeg", "image/png", "image/webp"}
     if file.content_type not in allowed_types:
         return jsonify({"error": "Invalid image type"}), 400
 
-    # Optional size check (5MB)
     if file.content_length and file.content_length > 5 * 1024 * 1024:
         return jsonify({"error": "File too large (max 5MB)"}), 400
 
-    # Upload to Azure Blob
-    image_url = upload_to_blob(file, vehicle_id)
-
-    conn = get_connection()
-    cur = conn.cursor()
-
     try:
+        image_url = upload_to_blob(file, vehicle_id)
+    except Exception as e:
+        return jsonify({
+            "error": "Image upload failed",
+            "details": str(e)
+        }), 500
+
+    conn = None
+    cur = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
         cur.execute(
             """
             INSERT INTO vehicle_images (vehicle_id, image_path, is_active)
@@ -110,12 +136,18 @@ def upload_vehicle_image(vehicle_id):
         )
         conn.commit()
         return jsonify({"image_path": image_url}), 201
+    except MySQLError as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": str(e)}), 500
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 
-# DELETE image (SOFT)
+# ----------------- DELETE image (SOFT) -----------------
 
 @vehicle_image_routes.route("/vehicle-images/<int:photo_id>", methods=["DELETE"])
 @auth_required
@@ -125,10 +157,11 @@ def delete_vehicle_image(photo_id):
     if not _image_owned(photo_id, user_id):
         return jsonify({"error": "Not found"}), 404
 
-    conn = get_connection()
-    cur = conn.cursor()
-
+    conn = None
+    cur = None
     try:
+        conn = get_connection()
+        cur = conn.cursor()
         cur.execute(
             """
             UPDATE vehicle_images
@@ -139,6 +172,12 @@ def delete_vehicle_image(photo_id):
         )
         conn.commit()
         return jsonify({"message": "Image deleted"}), 200
+    except MySQLError as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": str(e)}), 500
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
