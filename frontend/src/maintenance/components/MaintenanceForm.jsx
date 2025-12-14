@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 
+const today = new Date().toISOString().split("T")[0];
 const initialState = {
   service_date: "",
-  maintenance_type: "",
+  type: "",
   cost: "",
-  maintenance_status: "upcoming",
+  maintenance_status: "pending", 
 };
 
 export default function MaintenanceForm({ initialData, onSubmit, onCancel }) {
@@ -14,10 +15,10 @@ export default function MaintenanceForm({ initialData, onSubmit, onCancel }) {
   useEffect(() => {
     if (initialData) {
       setForm({
-        service_date: initialData.service_date,
-        maintenance_type: initialData.maintenance_type,
-        cost: initialData.cost,
-        maintenance_status: initialData.maintenance_status,
+        service_date: initialData.service_date ?? "",
+        type: initialData.type ?? "",
+        cost: initialData.cost ?? "",
+        maintenance_status: initialData.maintenance_status ?? "pending",
       });
     }
   }, [initialData]);
@@ -29,62 +30,115 @@ export default function MaintenanceForm({ initialData, onSubmit, onCancel }) {
     e.preventDefault();
     setLoading(true);
 
-    await onSubmit({
-      ...form,
-      cost: Number(form.cost),
-    });
-
-    setLoading(false);
+    try {
+      await onSubmit({
+        ...form,
+        cost: Number(form.cost),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>{initialData ? "Edit Maintenance" : "Create Maintenance"}</h3>
+    <div className="px-4 pt-10">
+      <div className="max-w-2xl mx-auto bg-white border rounded-lg shadow-sm p-8">
+        <h3 className="text-2xl font-semibold text-gray-900 mb-6">
+          {initialData ? "Edit Maintenance" : "Create Maintenance"}
+        </h3>
 
-      <input
-        type="date"
-        name="service_date"
-        value={form.service_date}
-        onChange={handleChange}
-        required
-      />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Service Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Service Date
+            </label>
+            <input
+              type="date"
+              name="service_date"
+              value={form.service_date}
+              onChange={handleChange}
+              required
+              max={today} 
+              className="w-full rounded border border-gray-300 px-3 py-2
+                         focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-      <input
-        name="maintenance_type"
-        placeholder="Maintenance Type"
-        value={form.maintenance_type}
-        onChange={handleChange}
-        required
-      />
+          {/* Maintenance Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Maintenance Type
+            </label>
+            <input
+              name="type"          
+              value={form.type}
+              onChange={handleChange}
+              required
+              placeholder="e.g. Oil Change, Brake Service"
+              className="w-full rounded border border-gray-300 px-3 py-2
+                         focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-      <input
-        type="number"
-        name="cost"
-        placeholder="Cost"
-        value={form.cost}
-        onChange={handleChange}
-        required
-      />
+          {/* Cost */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cost
+            </label>
+            <input
+              type="number"
+              name="cost"
+              value={form.cost}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+              required
+              className="w-full rounded border border-gray-300 px-3 py-2
+                         focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-      <select
-        name="maintenance_status"
-        value={form.maintenance_status}
-        onChange={handleChange}
-      >
-        <option value="upcoming">Upcoming</option>
-        <option value="pending">Pending</option>
-        <option value="completed">Completed</option>
-      </select>
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              name="maintenance_status"
+              value={form.maintenance_status}
+              onChange={handleChange}
+              className="w-full rounded border border-gray-300 px-3 py-2 bg-white
+                         focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
 
-      <button disabled={loading}>
-        {loading ? "Saving..." : "Save"}
-      </button>
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4">
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="border px-4 py-2 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            )}
 
-      {onCancel && (
-        <button type="button" onClick={onCancel}>
-          Cancel
-        </button>
-      )}
-    </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-black text-white px-6 py-2 rounded
+                         hover:bg-gray-900 transition disabled:opacity-50"
+            >
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

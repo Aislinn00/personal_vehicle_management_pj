@@ -12,9 +12,25 @@ export default function MaintenanceFormPage() {
   };
 
   return (
-    <div>
-      <h2>Create Maintenance Record</h2>
+    <div className="px-4 pt-10 space-y-6">
+      {/* Header */}
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-sm text-gray-600 hover:text-black hover:underline"
+        >
+          ← Back to Maintenance
+        </button>
 
+        <h2 className="text-2xl font-semibold text-gray-900 mt-2">
+          Create Maintenance Record
+        </h2>
+        <p className="text-sm text-gray-600">
+          Add a new maintenance entry for this vehicle.
+        </p>
+      </div>
+
+      {/* Form */}
       <MaintenanceForm
         onSubmit={handleCreate}
         onCancel={() => navigate(-1)}
