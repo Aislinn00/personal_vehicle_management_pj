@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { token, user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <nav className="bg-black text-white">
@@ -13,50 +21,34 @@ export default function Navbar() {
             PVMS
           </Link>
 
-          {/* Desktop links */}
-          <div className="hidden md:flex space-x-6">
-            <Link
-              to="/login"
-              className="hover:text-gray-300 transition"
-            >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="hover:text-gray-300 transition"
-            >
-              Register
-            </Link>
+          {/* Desktop */}
+          <div className="hidden md:flex items-center space-x-6">
+            {!token ? (
+              <>
+                <Link to="/login" className="hover:text-gray-300">
+                  Login
+                </Link>
+                <Link to="/register" className="hover:text-gray-300">
+                  Register
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-sm text-gray-300">{user?.full_name}</span>
+
+                <button
+                  onClick={handleLogout}
+                  className="border border-gray-500 px-3 py-1 rounded hover:bg-gray-800"
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </div>
 
           {/* Hamburger */}
-          <button
-            onClick={() => setOpen(!open)}
-            className="md:hidden focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {open ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
+          <button onClick={() => setOpen(!open)} className="md:hidden">
+            ☰
           </button>
         </div>
       </div>
@@ -64,20 +56,31 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden bg-black border-t border-gray-700">
-          <Link
-            to="/login"
-            className="block px-4 py-3 hover:bg-gray-800"
-            onClick={() => setOpen(false)}
-          >
-            Login
-          </Link>
-          <Link
-            to="/register"
-            className="block px-4 py-3 hover:bg-gray-800"
-            onClick={() => setOpen(false)}
-          >
-            Register
-          </Link>
+          {!token ? (
+            <>
+              <Link
+                to="/login"
+                className="block px-4 py-3 hover:bg-gray-800"
+                onClick={() => setOpen(false)}
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="block px-4 py-3 hover:bg-gray-800"
+                onClick={() => setOpen(false)}
+              >
+                Register
+              </Link>
+            </>
+          ) : (
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left px-4 py-3 hover:bg-gray-800"
+            >
+              Logout
+            </button>
+          )}
         </div>
       )}
     </nav>
