@@ -1,10 +1,9 @@
 from flask import Blueprint, request, jsonify, g
 from db import get_connection
 from utils.auth_role import auth_required
-from utils.azure_blob import upload_vehicle_image
+from utils.azure_blob import upload_to_blob
 
 vehicle_image_routes = Blueprint("vehicle_image_routes", __name__)
-
 
 def _vehicle_owned(vehicle_id, user_id):
     conn = get_connection()
@@ -13,97 +12,133 @@ def _vehicle_owned(vehicle_id, user_id):
         "SELECT user_id FROM vehicles WHERE vehicle_id = %s AND is_active = 1",
         (vehicle_id,)
     )
-    vehicle = cur.fetchone()
+    v = cur.fetchone()
     cur.close()
     conn.close()
-    return vehicle and vehicle["user_id"] == user_id
+    return bool(v) and v["user_id"] == user_id
 
-# UPLOAD IMAGE (AZURE)
+def _image_owned(photo_id, user_id):
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute(
+        """
+        SELECT v.user_id
+        FROM vehicle_images vi
+        JOIN vehicles v ON v.vehicle_id = vi.vehicle_id
+        WHERE vi.photo_id = %s
+          AND vi.is_active = 1
+          AND v.is_active = 1
+        """,
+        (photo_id,)
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return bool(row) and row["user_id"] == user_id
 
-@vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images/upload", methods=["POST"])
+
+# GET images
+
+@vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images", methods=["GET"])
 @auth_required
-def upload_image(vehicle_id):
-    if not _vehicle_owned(vehicle_id, g.current_user["user_id"]):
+def list_vehicle_images(vehicle_id):
+    user_id = g.current_user["user_id"]
+
+    if not _vehicle_owned(vehicle_id, user_id):
+        return jsonify({"error": "Forbidden"}), 403
+
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
+
+    cur.execute(
+        """
+        SELECT photo_id, image_path
+        FROM vehicle_images
+        WHERE vehicle_id = %s
+          AND is_active = 1
+        ORDER BY photo_id DESC
+        """,
+        (vehicle_id,)
+    )
+    images = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return jsonify(images), 200
+
+
+# UPLOAD image
+
+@vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images", methods=["POST"])
+@auth_required
+def upload_vehicle_image(vehicle_id):
+    user_id = g.current_user["user_id"]
+
+    if not _vehicle_owned(vehicle_id, user_id):
         return jsonify({"error": "Forbidden"}), 403
 
     if "image" not in request.files:
         return jsonify({"error": "No image file provided"}), 400
 
     file = request.files["image"]
-    if file.filename == "":
+
+    if not file or file.filename == "":
         return jsonify({"error": "Empty filename"}), 400
 
-    # Upload to Azure Blob
-    image_url = upload_vehicle_image(file, vehicle_id)
+    # Validate content type
+    allowed_types = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed_types:
+        return jsonify({"error": "Invalid image type"}), 400
 
-    # Save URL in DB
+    # Optional size check (5MB)
+    if file.content_length and file.content_length > 5 * 1024 * 1024:
+        return jsonify({"error": "File too large (max 5MB)"}), 400
+
+    # Upload to Azure Blob
+    image_url = upload_to_blob(file, vehicle_id)
+
     conn = get_connection()
     cur = conn.cursor()
-    res = cur.callproc(
-        "create_vehicle_image",
-        [vehicle_id, image_url, 0]
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
 
-    return jsonify({
-        "photo_id": res[-1],
-        "image_path": image_url
-    }), 201
+    try:
+        cur.execute(
+            """
+            INSERT INTO vehicle_images (vehicle_id, image_path, is_active)
+            VALUES (%s, %s, 1)
+            """,
+            (vehicle_id, image_url)
+        )
+        conn.commit()
+        return jsonify({"image_path": image_url}), 201
+    finally:
+        cur.close()
+        conn.close()
 
-# LIST IMAGES FOR VEHICLE
 
-@vehicle_image_routes.route("/vehicles/<int:vehicle_id>/images", methods=["GET"])
-@auth_required
-def list_vehicle_images(vehicle_id):
-    if not _vehicle_owned(vehicle_id, g.current_user["user_id"]):
-        return jsonify({"error": "Forbidden"}), 403
+# DELETE image (SOFT)
 
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.callproc("get_vehicle_images", [vehicle_id])
-
-    images = []
-    for r in cur.stored_results():
-        images = r.fetchall()
-
-    cur.close()
-    conn.close()
-    return jsonify(images), 200
-
-# GET SINGLE IMAGE
-@vehicle_image_routes.route("/images/<int:photo_id>", methods=["GET"])
-@auth_required
-def get_vehicle_image(photo_id):
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.callproc("get_vehicle_image_by_id", [photo_id])
-
-    image = None
-    for r in cur.stored_results():
-        image = r.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if not image:
-        return jsonify({"error": "Not found"}), 404
-
-    if not _vehicle_owned(image["vehicle_id"], g.current_user["user_id"]):
-        return jsonify({"error": "Forbidden"}), 403
-
-    return jsonify(image), 200
-
-# SOFT DELETE IMAGE
-@vehicle_image_routes.route("/images/<int:photo_id>", methods=["DELETE"])
+@vehicle_image_routes.route("/vehicle-images/<int:photo_id>", methods=["DELETE"])
 @auth_required
 def delete_vehicle_image(photo_id):
+    user_id = g.current_user["user_id"]
+
+    if not _image_owned(photo_id, user_id):
+        return jsonify({"error": "Not found"}), 404
+
     conn = get_connection()
     cur = conn.cursor()
-    cur.callproc("sp_delete_vehicle_image", [photo_id])
-    conn.commit()
-    cur.close()
-    conn.close()
 
-    return jsonify({"message": "Image deleted"}), 200
+    try:
+        cur.execute(
+            """
+            UPDATE vehicle_images
+            SET is_active = 0
+            WHERE photo_id = %s
+            """,
+            (photo_id,)
+        )
+        conn.commit()
+        return jsonify({"message": "Image deleted"}), 200
+    finally:
+        cur.close()
+        conn.close()
