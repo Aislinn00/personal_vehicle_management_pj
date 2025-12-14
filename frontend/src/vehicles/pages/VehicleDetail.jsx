@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getVehicleById, deleteVehicle } from "../../api/vehicleApi";
-import { getVehicleImages, uploadVehicleImage, deleteVehicleImage} from "../../api/vehicleImage";
+import {
+  getVehicleImages,
+  uploadVehicleImage,
+  deleteVehicleImage,
+} from "../../api/vehicleImageApi";
 import VehicleImageUpload from "../../vehicleImages/components/VehicleImageUpload";
 import VehicleImageList from "../../vehicleImages/components/VehicleImageList";
 
@@ -24,7 +28,7 @@ export default function VehicleDetail() {
 
         const imageRes = await getVehicleImages(id);
         setImages(imageRes.data);
-      } catch (err) {
+      } catch {
         setError("Failed to load vehicle data.");
       } finally {
         setLoading(false);
@@ -47,91 +51,121 @@ export default function VehicleDetail() {
     setImages(images.filter((img) => img.photo_id !== photoId));
   };
 
-  if (loading) return <p>Loading vehicle...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-  if (!vehicle) return <p>Vehicle not found.</p>;
+  if (loading) return <p className="px-4 pt-10">Loading vehicle…</p>;
+  if (error) return <p className="px-4 pt-10 text-red-600">{error}</p>;
+  if (!vehicle) return <p className="px-4 pt-10">Vehicle not found.</p>;
 
   return (
-    <div>
-      <h2>Vehicle Detail</h2>
+    <div className="px-4 pt-15 space-y-8">
+      {/* Back */}
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="text-sm text-gray-600 hover:text-black hover:underline"
+      >
+        ← Back to Dashboard
+      </button>
 
-      <p>
-        <strong>
-          {vehicle.make} {vehicle.model}
-        </strong>
-      </p>
-      <p>Year: {vehicle.year}</p>
-      <p>Fuel: {vehicle.fuel_type}</p>
-      <p>Mileage: {vehicle.mileage}</p>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            {vehicle.make} {vehicle.model}
+          </h2>
+          <p className="text-sm text-gray-600">Year: {vehicle.year}</p>
+        </div>
 
-      {/* VEHICLE ACTIONS */}
-      <div style={{ marginTop: "1rem" }}>
-        <button onClick={() => navigate(`/vehicles/${id}/edit`)}>
-          Edit Vehicle
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/vehicles/${id}/edit`)}
+            className="border px-4 py-2 rounded hover:bg-gray-50"
+          >
+            Edit
+          </button>
 
-        <button
-          onClick={async () => {
-            if (!window.confirm("Delete this vehicle?")) return;
-            await deleteVehicle(id);
-            navigate("/dashboard");
-          }}
-          style={{ marginLeft: "0.5rem" }}
-        >
-          Delete Vehicle
-        </button>
+          <button
+            onClick={async () => {
+              if (!window.confirm("Delete this vehicle?")) return;
+              await deleteVehicle(id);
+              navigate("/dashboard");
+            }}
+            className="border border-red-300 text-red-600 px-4 py-2 rounded hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
-      {/* MAINTENANCE SECTION */}
-      <div style={{ marginTop: "1.5rem" }}>
-        <h3>Maintenance</h3>
+      {/* Vehicle Info */}
+      <div className="bg-white border rounded-lg p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <p className="text-sm text-gray-500">Fuel Type</p>
+          <p className="font-medium">{vehicle.fuel_type || "—"}</p>
+        </div>
 
-        <button onClick={() => navigate(`/vehicles/${id}/maintenance/new`)}>
-          Create Maintenance
-        </button>
+        <div>
+          <p className="text-sm text-gray-500">Mileage</p>
+          <p className="font-medium">{vehicle.mileage ?? "—"}</p>
+        </div>
 
-        <button
-          onClick={() => navigate(`/vehicles/${id}/maintenance`)}
-          style={{ marginLeft: "0.5rem" }}
-        >
-          View Maintenance Records
-        </button>
+        <div>
+          <p className="text-sm text-gray-500">Registration</p>
+          <p className="font-medium">{vehicle.registration_number || "—"}</p>
+        </div>
       </div>
 
-      {/* REMINDERS SECTION */}
-      <div style={{ marginTop: "1.5rem" }}>
-        <h3>Reminders</h3>
+      {/* Maintenance */}
+      <div className="bg-white border rounded-lg p-6 space-y-4">
+        <h3 className="text-lg font-semibold">Maintenance</h3>
 
-        <button onClick={() => navigate(`/vehicles/${id}/reminders/new`)}>
-          Create Reminder
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate(`/vehicles/${id}/maintenance/new`)}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-900"
+          >
+            Create Maintenance
+          </button>
 
-        <button
-          onClick={() => navigate(`/vehicles/${id}/reminders`)}
-          style={{ marginLeft: "0.5rem" }}
-        >
-          View Reminders
-        </button>
+          <button
+            onClick={() => navigate(`/vehicles/${id}/maintenance`)}
+            className="border px-4 py-2 rounded hover:bg-gray-50"
+          >
+            View Records
+          </button>
+        </div>
       </div>
 
-      {/* VEHICLE IMAGES SECTION */}
-      <div style={{ marginTop: "1.5rem" }}>
-        <h3>Vehicle Images</h3>
+      {/* Reminders */}
+      <div className="bg-white border rounded-lg p-6 space-y-4">
+        <h3 className="text-lg font-semibold">Reminders</h3>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate(`/vehicles/${id}/reminders/new`)}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-900"
+          >
+            Create Reminder
+          </button>
+
+          <button
+            onClick={() => navigate(`/vehicles/${id}/reminders`)}
+            className="border px-4 py-2 rounded hover:bg-gray-50"
+          >
+            View Reminders
+          </button>
+        </div>
+      </div>
+
+      {/* Images */}
+      <div className="bg-white border rounded-lg p-6 space-y-4">
+        <h3 className="text-lg font-semibold">Vehicle Images</h3>
 
         <VehicleImageUpload onUpload={handleUploadImage} />
 
         {imageLoading ? (
-          <p>Loading images...</p>
+          <p className="text-sm text-gray-500">Loading images…</p>
         ) : (
           <VehicleImageList images={images} onDelete={handleDeleteImage} />
         )}
-      </div>
-
-      {/* NAVIGATION */}
-      <div style={{ marginTop: "2rem" }}>
-        <button onClick={() => navigate("/dashboard")}>
-          Back to Dashboard
-        </button>
       </div>
     </div>
   );
