@@ -5,6 +5,7 @@ app = Flask(__name__)
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://personal-vehicle-management-pj.vercel.app",
+    "https://personal-vehicle-management-e3ip1lhpg.vercel.app",
 ]
 
 CORS(
