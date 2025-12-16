@@ -5,12 +5,11 @@ app = Flask(__name__)
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://personal-vehicle-management-pj.vercel.app",
-    "https://personal-vehicle-management-e3ip1lhpg.vercel.app",
 ]
 
 CORS(
     app,
-    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+    resources={r"/*": {"origins": [r"https://.*\.vercel\.app", "http://localhost:5173"]}},
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
