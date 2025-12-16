@@ -1,17 +1,17 @@
-# 🚗 Personal Vehicle Management System
+# Personal Vehicle Management System
 
 A full-stack web application for managing personal vehicles, including maintenance records, reminders, and vehicle images.  
 The system is built with a React + Tailwind frontend, a Flask REST API backend, MySQL for data persistence, and Azure Blob Storage for image handling.
 
 ---
 
-## 📌 Features
+## Features
 
-### 🔐 Authentication & Authorization
+### Authentication & Authorization
 - JWT-based authentication
 - User-specific data access with strict ownership enforcement
 
-### 🚘 Vehicle Management
+### Vehicle Management
 - Create, view, update, and delete vehicles
 - Vehicles are scoped to authenticated users only
 
@@ -20,13 +20,13 @@ The system is built with a React + Tailwind frontend, a Flask REST API backend, 
 - Fields include service date, maintenance type, cost, and status
 - Server-side validation and access control
 
-### ⏰ Reminders
+### Reminders
 - Create reminders per vehicle
 - Support for date-based and mileage-based reminders
 - Mark reminders as completed
 - Filter reminders by status (upcoming / completed)
 
-### 🖼 Vehicle Images
+### Vehicle Images
 - Upload vehicle images
 - Images stored in Azure Blob Storage
 - Image URLs persisted in MySQL
@@ -35,7 +35,20 @@ The system is built with a React + Tailwind frontend, a Flask REST API backend, 
 
 ---
 
-## 🧱 Tech Stack
+## Project Background
+
+This project was inspired by a business-oriented vehicle management application encountered during an industry internship. While the original system addressed broader organizational needs, it provided the foundational idea for developing a simplified, personal-focused vehicle management application. This project was independently designed and implemented to demonstrate how core business concepts can be adapted into a practical personal-use system.
+
+---
+
+## Live Deployment
+
+- Frontend (Vercel) : https://personal-vehicle-management-pj.vercel.app/
+- Backend (Render) : https://personal-vehicle-management-pj.onrender.com/test-db
+
+---
+
+## Tech Stack
 
 ### Frontend
 - React (Vite)
@@ -56,9 +69,8 @@ The system is built with a React + Tailwind frontend, a Flask REST API backend, 
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
-```text
 ├── backend/
 │   ├── routes/             # Flask route blueprints (vehicles, maintenance, reminders, images)
 │   ├── utils/              # Utility modules (auth, Azure Blob integration)
@@ -87,7 +99,7 @@ The system is built with a React + Tailwind frontend, a Flask REST API backend, 
 
 ---
 
-## 🤖 AI Assistance Disclosure
+## AI Assistance Disclosure
 
 This project was developed by the author.  
 AI-based tools (including OpenAI’s ChatGPT) were used **as a supplementary aid** for:
@@ -98,3 +110,16 @@ AI-based tools (including OpenAI’s ChatGPT) were used **as a supplementary aid
 
 All architectural decisions, implementation, testing, and final code were reviewed, adapted, and validated by the author.
 
+---
+
+### References
+
+## Reference Links
+
+- How to setup ReactJs with Vite: https://www.geeksforgeeks.org/reactjs/how-to-setup-reactjs-with-vite/
+- Introduction to Flask: https://www.geeksforgeeks.org/python/python-introduction-to-web-development-using-flask/
+- Hashing Passwords in Python with Bcrypt: https://www.geeksforgeeks.org/python/hashing-passwords-in-python-with-bcrypt/
+- Using JWT for user authentication in Flask: https://www.geeksforgeeks.org/python/using-jwt-for-user-authentication-in-flask/
+- Installing TailwindCss with Vite: https://tailwindcss.com/docs/installation/using-vite
+- Azure Database for MySQL - Flexible Server: https://learn.microsoft.com/en-us/azure/mysql/flexible-server/how-to-deploy-on-azure-free-account
+- Introduction to Azure Blob Storage: https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
